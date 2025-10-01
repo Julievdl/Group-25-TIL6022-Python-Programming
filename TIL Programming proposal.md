@@ -46,4 +46,5 @@ If datasets are known we will add them
 The data that will be used was collected during the SAIL event in August of 2025\. The event had a duration of 5 days, from August 20th to August 24th. The temporal scale therefore encompasses these five days. The geographical scale of this project includes the event area, which is the IJHaven in Amsterdam and the surrounding neighbourhoods of the IJ river (city center connections). 
 
 ## **References**
-
+"Digital Twin voor preventief crowdmanagement" Bignieuws. 21/09/2025
+https://www.bignieuws.nl/digital-twin-voor-preventief-crowdmanagement/
