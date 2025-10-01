@@ -7,7 +7,8 @@
 - Thijmen van der Geer (5226112)  
 - Merle de Jong (5606063)  
 - Julie van der Linde (5451906)  
-- Max Beishuizen
+- Max Beishuizen 
+- Wouter Gerritsen (6598021)
 
 **Introduction**  
 With the continuous growth of the population and increasing density of inhabitants in cities, the monitoring of crowd behaviour is increasingly important. In particular during large scale events such as SAIL, where people from across the Netherlands and even other countries come to one place. This can cause hazards in the form of crowd stampedes and cause difficulty in evacuation in case of danger. Therefore, it is essential to monitor and guide crowds in real-time to prevent these dangerous situations from occurring. To do this, crowd managers and decision-makers often make use of a crowd monitoring dashboard. The purpose of this dashboard is to visualise the crowds and provide key insights in the current situation, as well as prediction about events in the near future that may have an influence. The purpose of this project is to create such a dashboard based on the data gathered during the SAIL 2025 event.
