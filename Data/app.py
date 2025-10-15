@@ -1,5 +1,7 @@
 import pandas as pd
 from dash import Dash, dcc, html
+from animplot import fig as animfig
+
 csvdata = pd.read_csv("SAIL2025_LVMA_data_3min_20August-25August2025_flow.csv")
 print(csvdata.columns)
 data = (
@@ -47,6 +49,9 @@ app.layout = html.Div(
                 ],
                 "layout": {"title": "Pedestrian count"},
             },
+        ),
+        dcc.Graph(
+            figure=animfig
         ),
     ]
 )
