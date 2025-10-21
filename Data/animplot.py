@@ -1,28 +1,29 @@
 import pandas as pd
 from dash import Dash, dcc, html, Input, Output
 import numpy as np
+from data_combining.ipynb import df_long
 
 limit = 70
+print(df_long)
 
+#import data
 csvdata = pd.read_csv("SAIL2025_LVMA_data_3min_20August-25August2025_flow.csv")
-#sensorloc = pd.read_csv("sensor-location.csv", skiprows=1, sep=';'
-#                        ,names=['Sensor','Location','LatLong','Width','EffWidth'])
 
+#transform data
 data = (
     csvdata
     .assign(timestamp=lambda data: pd.to_datetime(data["timestamp"], format="%Y-%m-%d %H:%M:%S%z"))
     .sort_values(by="timestamp")
 )
-#data['x']=np.linspace(1,100,len(data.timestamp))#x location
-#data['y']=np.linspace(1,100,len(data.timestamp))#y location
-#data = data.iloc[:,70:]
-data = data.head(100)
 
-dropcols = ['hour', 'minute', 'day', 'month', 'weekday', 'is_weekend'] #drop columns
+
+#drop unneccessary columns
+dropcols = ['hour', 'minute', 'day', 'month', 'weekday', 'is_weekend'] 
 
 for i in dropcols:
     data = data.drop(i,axis=1)
 
+#transform into longdata format for plotting(currently only)
 longdata = pd.melt(
     data.iloc[:,:30],
     id_vars=["timestamp"],   # Columns to keep
@@ -31,9 +32,9 @@ longdata = pd.melt(
 ).sort_values(by=["timestamp","Sensor"])
 
 
-#print(data)
 print(longdata)
 
+#plot bar plot with animation over time
 import plotly.express as px
 
 fig = px.bar(
