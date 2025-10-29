@@ -288,7 +288,7 @@ def show_car_map(tab):
     Input('graph-update-interval','n_intervals')
 )
 def update_ped_fig(n):
-    nextstep = unique_times[n % len(unique_times)]
+    nextstep = unique_times[140 + n % len(unique_times)]
     #print(n,nextstep)
     nextflowdata = flowdata[flowdata['timestamp']==nextstep]
     nextheatdata = heatdata[heatdata['timestamp']==nextstep]
@@ -314,7 +314,7 @@ def update_alerts_and_map(slider_index,history):
     history = history or []
     
     # --- Voorbereiding ---
-    current_time = unique_times[slider_index % len(unique_times)]
+    current_time = unique_times[140 + slider_index % len(unique_times)]
     current_time_str = pd.to_datetime(current_time).strftime('%A %d-%m-%Y %H:%M')
     fig = go.Figure() # Begin ALTIJD met een lege figuur
 
