@@ -112,7 +112,7 @@ app.layout = html.Div([
             #Updating of graphs
             dcc.Interval(
             id='graph-update-interval',
-            interval=2000,  #10 seconds
+            interval=500,  #10 seconds
             n_intervals=30,
             disabled=True
             )
@@ -122,11 +122,11 @@ app.layout = html.Div([
         
         
         #Car traffic overview tab
-        dcc.Tab(label='Car Traffic Overview (slow loading +/- 30s)', value='car-overview', children=[
+        dcc.Tab(label='Car Traffic Overview', value='car-overview', children=[
             html.Div([
         html.Iframe(
         id='car-map',
-        src="/assets/verkeerskaart_amsterdam_definitief.html",
+        src="/assets/verkeerskaart_amsterdam_wegen_in_out_styled.html",
         style={"width": "100%", "height": "600px", "border": "none", "display": "none"}  # hidden initially
             )
             ],style={'padding':'20px'})
@@ -172,7 +172,6 @@ def show_car_map(tab):
     Input('tabs-dash','value')
 )
 def update_ped_graph(tab):
-    n = 0
     return n, tab != 'ped-overview'
 
 #Ped graph updater
