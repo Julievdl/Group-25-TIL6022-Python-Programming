@@ -32,7 +32,7 @@ longdata = pd.melt(
 ).sort_values(by=["timestamp","Sensor"])
 
 
-print(longdata)
+#print(longdata)
 
 #plot bar plot with animation over time
 import plotly.express as px
