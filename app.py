@@ -1,9 +1,12 @@
 import pandas as pd
 from dash import Dash, dcc, html, callback, Output, Input
-from animplot import fig as animfig
-from Data.heat_map import figheat as heatmap
-from datetime import datetime
+from datetime import datetime, timedelta
 
+from animplot import fig as animfig, flow_bar
+from data_combining import df_long as flowdata
+from Data.heat_map import figheat as heatmap, unique_times, merged as heatdata, heatmap_fig
+
+flowdata=flowdata.sort_values(by=['sensor_direction','timestamp'])
 
 #import data
 csvdata = pd.read_csv("Data/SAIL2025_LVMA_data_3min_20August-25August2025_flow.csv")
@@ -34,7 +37,7 @@ app.layout = html.Div([
         html.H1('Traffic Dashboard'), 
         
         #Clock
-        html.H2('Clock'),
+        html.H2('Current time:'),
         html.Div(id='live-time',style={"fontSize": "40px", "fontWeight": "bold"}),
         dcc.Interval(
         id='interval-component',
@@ -66,7 +69,9 @@ app.layout = html.Div([
 
     #Main content
     html.Div([
-    dcc.Tabs(id="tabs-dash", value='area-overview', children=[
+        
+        #Area overview tab
+        dcc.Tabs(id="tabs-dash", value='area-overview', children=[
         dcc.Tab(label='Area Overview', value='area-overview', children=[
             html.Div([
             #html.H3('Area Overview'),
@@ -76,17 +81,47 @@ app.layout = html.Div([
             )
             ],style={'padding':'20px'})
         ]),
-        dcc.Tab(label='Pedestrian Overview', value='ped-overview', children=[
+        
+        #Pedestrian overview tab
+        dcc.Tab(label='Pedestrian Overview', value='ped-overview', id='ped-overview', children=[
             html.Div([
             #html.H3('Pedestrian Traffic'),
+            
             dcc.Graph(
-            figure=heatmap
+            figure=heatmap,
+            id='heatmap'
             ),
+            html.H3('Plotted timestamp:'),
+            html.H3(id='plottime'),
             dcc.Graph(
-            figure=animfig
+            figure=animfig,
+            id='animfig'
+            ),
+            
+            html.H3('History'),
+            #static figures
+            dcc.Graph(
+            figure=heatmap,
+
+            ),
+            
+            dcc.Graph(
+            figure=animfig,
+
+            ),
+            #Updating of graphs
+            dcc.Interval(
+            id='graph-update-interval',
+            interval=2000,  #10 seconds
+            n_intervals=30,
+            disabled=True
             )
+            
             ],style={'padding':'20px'})
         ]),
+        
+        
+        #Car traffic overview tab
         dcc.Tab(label='Car Traffic Overview (slow loading +/- 30s)', value='car-overview', children=[
             html.Div([
         html.Iframe(
@@ -112,6 +147,7 @@ app.layout = html.Div([
     html.Div(id='tabs-information')
 ])
 
+#Live clock
 @app.callback(
     Output('live-time', 'children'),
     Input('interval-component', 'n_intervals')
@@ -120,6 +156,7 @@ def update_time(n):
     now = datetime.now().strftime("%H:%M:%S")
     return f"{now}"
 
+#Hopefully improve loading for car map
 @app.callback(
     Output('car-map','style'),
     Input('tabs-dash','value')
@@ -128,6 +165,31 @@ def show_car_map(tab):
     if tab == 'car-overview':
         return {"width": "100%", "height": "600px", "border": "none", "display": "block"}
     return {"display":"none"}
+
+#Ped graph update timer
+@app.callback(
+    [Output('graph-update-interval','n_intervals'),Output('graph-update-interval','disabled')],
+    Input('tabs-dash','value')
+)
+def update_ped_graph(tab):
+    n = 0
+    return n, tab != 'ped-overview'
+
+#Ped graph updater
+@app.callback(
+    [Output('heatmap','figure'),Output('animfig','figure'),Output('plottime', 'children')],
+    Input('graph-update-interval','n_intervals')
+)
+def update_ped_fig(n):
+    nextstep = unique_times[n % len(unique_times)]
+    print(n,nextstep)
+    nextflowdata = flowdata[flowdata['timestamp']==nextstep]
+    nextheatdata = heatdata[heatdata['timestamp']==nextstep]
+    
+    heatfig = heatmap_fig(nextheatdata)
+    flowfig = flow_bar(nextflowdata)
+    
+    return heatfig, flowfig, f"{nextstep}"
 
 if __name__ == "__main__":
     app.run_server(debug=True)

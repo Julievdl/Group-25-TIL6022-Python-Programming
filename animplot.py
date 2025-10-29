@@ -5,7 +5,7 @@ import numpy as np
 from data_combining import df_long as flowdata
 
 limit = 70
-
+maxflow = flowdata['flow'].max()
 #import data
 csvdata = pd.read_csv("Data/SAIL2025_LVMA_data_3min_20August-25August2025_flow.csv")
 
@@ -36,7 +36,8 @@ longdata = pd.melt(
 
 #plot bar plot with animation over time
 import plotly.express as px
-flowdata=flowdata.head(1000)
+flowdata=flowdata.head(3000)
+
 fig = px.bar(
     flowdata,
     x="sensor_direction",              # X-axis
@@ -62,5 +63,21 @@ fig.update_layout(
     }]
 )
 
+def flow_bar(data):
+    fig = px.bar(
+        data,
+        x="sensor_direction",              # X-axis
+        y="flow", 
+        color = "sensor_direction", # Y-axis
+        range_y=[0, maxflow]  # Y-axis range
+    )
+    fig.update_layout(
+        barmode = 'group',
+        xaxis=dict(
+            tickangle=-45,     # optional: rotate labels
+            tickfont=dict(size=10)  # smaller font size
+        )
+    )
+    
+    return fig
 
-fig.show()

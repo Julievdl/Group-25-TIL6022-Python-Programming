@@ -3,11 +3,6 @@ import pandas as pd
 import numpy as np
 import os
 
-import osmnx
-import shapely
-print(osmnx.__version__)
-print(shapely.__version__)
-
 from shapely.geometry import Point
 import matplotlib.pyplot as plt
 import osmnx as ox
@@ -188,9 +183,10 @@ merged["count"] = merged["count"].clip(lower=0)  # negatieve waardes vermijden
 merged["count_norm"] = merged["count"] / merged["count"].max()
 
 # === Minder tijdstappen voor performance ===
+#merged = merged.head(500)
 unique_times = sorted(merged["timestamp"].unique())
-sampled_times = unique_times[::10]  # elke ~30 min
-merged = merged[merged["timestamp"].isin(sampled_times)]
+#sampled_times = unique_times[::10]  # elke ~30 min
+# merged = merged[merged["timestamp"].isin(sampled_times)]
 
 # === Heatmap in Plotly ===
 figheat = px.density_mapbox(
@@ -212,6 +208,29 @@ figheat.update_layout(
     title="Bewegende Heatmap van Publieksdrukte tijdens SAIL 2025",
     coloraxis_showscale=False,
 )
+
+def heatmap_fig(merged):
+    # === Heatmap in Plotly ===
+    figheat = px.density_mapbox(
+        merged,
+        lat="latitude",
+        lon="longitude",
+        z="count_norm",
+        radius=18,                    # kleinere radius → meer detail
+        center=dict(lat=52.373, lon=4.9),
+        zoom=12.5,
+        mapbox_style="carto-positron",
+        color_continuous_scale="inferno",
+        opacity=0.75                  # maakt de heat subtieler
+    )
+
+    figheat.update_layout(
+        margin={"r": 0, "t": 50, "l": 0, "b": 0},
+        title="Bewegende Heatmap van Publieksdrukte tijdens SAIL 2025",
+        coloraxis_showscale=False,
+    )
+    
+    return figheat
 
 #figheat.write_html("sail_heatmap_vloeiend_light.html")
 print("✅ Heatmap opgeslagen als 'sail_heatmap_vloeiend_light.html'. Open dit bestand in je browser.")

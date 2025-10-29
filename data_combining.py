@@ -51,7 +51,8 @@ df_long = df_long.merge(
 
 df_long["flow"] = df_long["count"] / (3 * df_long["Effectieve breedte"]) # flow = count /( 3 (min)  * effective witdh field)
 
-df_long = df_long.sort_values(by="timestamp", ascending=False)
+df_long = df_long.sort_values(by="timestamp")
+df_long["timestamp"] = pd.to_datetime(df_long["timestamp"])
 
 #combined flow
 df_combined_long = (
