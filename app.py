@@ -8,15 +8,17 @@ import plotly.graph_objects as go
 from animplot import fig as animfig, flow_bar
 from data_combining import df_long as flowdata
 from Data.heat_map import figheat as heatmap, unique_times, merged as heatdata, heatmap_fig
+from Data.vesselpositions import MapOnTime as shipmap, gdf as shipdata
 
 flowdata=flowdata.sort_values(by=['sensor_direction','timestamp'])
-
 
 #ALERT SYSTEM PREP-----
 import dash_bootstrap_components as dbc
 from dash import dcc, html, Input, Output
 import json
 import traceback # Nodig voor foutmeldingen
+
+TIME_OFFSET = 260
 
 # === STAP 0: Sensor Locations (Extra Robuust) ===
 df_sensors = pd.read_csv("Data/sensor-location.csv", sep=";")
@@ -120,7 +122,7 @@ NEIGHBOR_MAP = {
 
 
 
-
+CLOCK_SPEED = 7000
 
 
 app = Dash(__name__)
@@ -136,18 +138,17 @@ app.layout = html.Div([
         #Top section: title + clock
         html.Div([ 
         html.Div(id='live-time',style={"fontSize": "30px", "fontWeight": "bold"}),
-        dcc.Interval(id='interval-component', interval=1000,n_intervals=0),
+        dcc.Interval(id='interval-component', interval=CLOCK_SPEED,n_intervals=0),
         ],style={"padding-bottom": "20px"}),
         
         
         #Alerts section
         html.Div([
-            html.H3('Alerts:'),
-            
             dcc.Store(id='alert-history', data=[]), #save previous alerts
             
-            #Updating of graphs (synching of alerts, heatmap and flow )
-            dcc.Interval(id='graph-update-interval', interval=5000, n_intervals=0),
+            # Updating of graphs (synching of alerts, heatmap and flow )
+            # Multiplied by 3 as we have data only once every 3 min. 
+            dcc.Interval(id='graph-update-interval', interval=CLOCK_SPEED * 3, n_intervals=0),
             html.H4("Alerts & Rerouting Advice", className="text-secondary"),
             html.Hr(),
             html.Div(id="alert-panel-status"),
@@ -174,15 +175,32 @@ app.layout = html.Div([
     #Main content
     html.Div([
         
-        #Area overview tab
+        
         dcc.Tabs(id="tabs-dash", value='ped-overview', children=[
+            
+        #Area overview tab
         dcc.Tab(label='Area Overview', value='area-overview', children=[
             html.Div([
+        html.Iframe(
+        id='sensor-map',
+        src="/assets/interactive_sensor_map.html",
+        style={"width": "100%", "height": "600px", "border": "none"}  # hidden initially
+            )
+            ],style={'padding':'20px'})
+        ]),
+        
+        #Area overview tab
+        dcc.Tab(label='Vessel Overview', value='vessel-overview', children=[
+            html.Div([
             #html.H3('Area Overview'),
+            dcc.Graph(
+            figure=px.scatter_mapbox(lat=[], lon=[]),
+            id='vesselmap',style={"height":"500 px"}
+            ),
             html.Img(
             src="/assets/sensormap.png",  # path relative to the Dash server
-            style={"width": "700px", "height": "auto"}  # optional styling
-            )
+            style={"width": "500px", "height": "auto"}  # optional styling
+            ),
             ],style={'padding':'20px'})
         ]),
         
@@ -228,6 +246,7 @@ app.layout = html.Div([
             )
             ],style={'padding':'20px'})
         ]),
+        
         ],
             #  Style for main content
              style={
@@ -258,7 +277,10 @@ app.layout = html.Div([
     Input('interval-component', 'n_intervals')
 )
 def update_time(n):
-    now = datetime.now().strftime("%H:%M:%S")
+    start = datetime(year=2025,month=8,day=20,hour=13,minute=0,second=0)
+    now = start + timedelta(minutes=n)
+    now = now.strftime("%H:%M")
+    print('timeprint', now)
     return f"SAIL 2025 Crowd Management Dashboard - {now}"
 
 #Hopefully improve loading for car map
@@ -270,34 +292,6 @@ def show_car_map(tab):
     if tab == 'car-overview':
         return {"width": "100%", "height": "600px", "border": "none", "display": "block"}
     return {"display":"none"}
-
-
-# #Ped graph update timer
-# @app.callback(
-#     [Output('graph-update-interval','n_intervals')],
-#     Input('tabs-dash','value')
-# )
-# def update_ped_graph(tab):
-#     n=0
-#     return n
-
-
-#Ped graph updater
-@app.callback(
-    [Output('heatmap','figure'),Output('animfig','figure'),Output('plottime', 'children')],
-    Input('graph-update-interval','n_intervals')
-)
-def update_ped_fig(n):
-    nextstep = unique_times[140 + n % len(unique_times)]
-    #print(n,nextstep)
-    nextflowdata = flowdata[flowdata['timestamp']==nextstep]
-    nextheatdata = heatdata[heatdata['timestamp']==nextstep]
-    
-    heatfig = heatmap_fig(nextheatdata)
-    flowfig = flow_bar(nextflowdata)
-    
-    return heatfig, flowfig, f"{nextstep}"
-
 
 #Alert system callback
 @app.callback(
@@ -314,24 +308,23 @@ def update_alerts_and_map(slider_index,history):
     history = history or []
     
     # --- Voorbereiding ---
-    current_time = unique_times[140 + slider_index % len(unique_times)]
+    current_time = unique_times[TIME_OFFSET + slider_index % len(unique_times)]
     current_time_str = pd.to_datetime(current_time).strftime('%A %d-%m-%Y %H:%M')
     fig = go.Figure() # Begin ALTIJD met een lege figuur
+    print(f"slider_index={slider_index}, current_time={current_time}")
 
-    fig = go.Figure()
 
     
     try:
         # Base map layout (always present)
-        fig.update_layout(
-            margin={"r":0,"t":50,"l":0,"b":0},
-            title=f"Alerts at: {current_time_str}",
-            map_style="carto-positron",
-            map_center=dict(lat=52.373, lon=4.9),
-            map_zoom=12.5,
-            showlegend=False
-        )
-        
+        # fig.update_layout(
+        #     margin={"r":0,"t":50,"l":0,"b":0},
+        #     title=f"Alerts at: {current_time_str}",
+        #     map_style="carto-positron",
+        #     map_center=dict(lat=52.373, lon=4.9),
+        #     map_zoom=12.5,
+        #     showlegend=False
+        # )
         
         # --- 1. Data Ophalen ---
         data_at_time = merged[merged["timestamp"] == current_time].copy()
@@ -436,7 +429,9 @@ def update_alerts_and_map(slider_index,history):
         alert_list_items = alert_list_items + history
         
         print(f"--- DEBUG: Tijd: {current_time_str} --- Rood:{len(lats_red)} Geel:{len(lats_yellow)} Groen:{len(lats_green)} ---")
-
+        print('red',len(lats_red))
+        print('yellow',len(lats_yellow))
+        print('green',len(lats_green))
         # Aparte add_trace voor elke kleur
         if len(lats_red) > 0:
             fig.add_trace(go.Scattermap(
@@ -445,16 +440,17 @@ def update_alerts_and_map(slider_index,history):
                 text=texts_red, textposition='bottom right',
                 textfont=dict(size=14, color='black'), hoverinfo='text', name='Capacity Alert'
             ))
-            history = [timestamp_header] + alert_list_items + history
+            
 
         if len(lats_yellow) > 0:
+            print('yellowprint')
             fig.add_trace(go.Scattermap(
                 lat=lats_yellow, lon=lons_yellow, mode='markers+text',
                 marker=dict(color='yellow', symbol='circle', size=18, allowoverlap=True),
                 text=texts_yellow, textposition='bottom right',
                 textfont=dict(size=14, color='black'), hoverinfo='text', name='Busy Alert'
             ))
-            history = [timestamp_header] + alert_list_items + history
+            
 
         if len(lats_green) > 0:
             fig.add_trace(go.Scattermap(
@@ -463,16 +459,16 @@ def update_alerts_and_map(slider_index,history):
                 text=texts_green, textposition='bottom right',
                 textfont=dict(size=14, color='black'), hoverinfo='text', name='Solution Location'
             ))
-            history = [timestamp_header] + alert_list_items + history
+            
+        # Hack to make sure the map doesn't dissapear lmaoooo
+        fig.add_trace(go.Scattermap(
+            lat=[5], lon=[60], mode='markers+text',
+            marker=dict(color='white', symbol='circle', size=1, allowoverlap=True),
+            text=texts_green, textposition='bottom right',
+            textfont=dict(size=14, color='black'), hoverinfo='text', name='Solution Location'
+        ))
 
-        else:
-            fig.add_trace(go.Scattermap(
-                lat=[], lon=[], mode='markers+text',
-                marker=dict(color='green', symbol='circle', size=18, allowoverlap=True),
-                text=texts_green, textposition='bottom right',
-                textfont=dict(size=14, color='black'), hoverinfo='text', name='Solution Location'
-            ))
-
+        history = [timestamp_header] + alert_list_items + history
         history = history[:20] #trim to 20 most recent entries
         
         # --- 6. Return alle outputs ---
@@ -490,6 +486,27 @@ def update_alerts_and_map(slider_index,history):
         # Geef een foutmelding terug voor de alerts
         error_message = dbc.Alert(f"An error occurred processing data for {current_time_str}. Check terminal for details.", color="danger")
         return error_message, [], fig
+
+#Ped graph updater
+@app.callback(
+    [Output('heatmap','figure'),Output('animfig','figure'),Output('plottime', 'children'),Output('vesselmap','figure')],
+    Input('graph-update-interval','n_intervals')
+)
+def update_ped_fig(n):
+    nextstep = unique_times[TIME_OFFSET + n % len(unique_times)]
+    #print(n,nextstep)
+    nextflowdata = flowdata[flowdata['timestamp']==nextstep]
+    nextheatdata = heatdata[heatdata['timestamp']==nextstep]
+    
+    heatfig = heatmap_fig(nextheatdata)
+    flowfig = flow_bar(nextflowdata)
+
+    nextshipdata = shipdata[shipdata['upload-timestamp']==nextstep]
+    vesselmap = shipmap(nextstep)
+    
+    return heatfig, flowfig, f"{nextstep}", vesselmap
+
+
 
 if __name__ == "__main__":
     app.run_server(debug=True)
