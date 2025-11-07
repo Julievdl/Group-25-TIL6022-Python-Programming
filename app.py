@@ -5,12 +5,13 @@ import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
 
-from animplot import fig as animfig, flow_bar
-from data_combining import df_long as flowdata
-from Data.heat_map import figheat as heatmap, unique_times, merged as heatdata, heatmap_fig
-from Data.vesselpositions import MapOnTime as shipmap, gdf as shipdata
+from python_files.animplot import fig as animfig, flow_bar
+from python_files.data_combining import df_long as flowdata
+from python_files.heat_map import figheat as heatmap, unique_times, merged as heatdata, heatmap_fig
+from python_files.vesselpositions import MapOnTime as shipmap, gdf as shipdata
 
 flowdata=flowdata.sort_values(by=['sensor_direction','timestamp'])
+
 
 #ALERT SYSTEM PREP-----
 import dash_bootstrap_components as dbc
@@ -121,7 +122,7 @@ NEIGHBOR_MAP = {
 
 
 
-
+#Clock speed indicator (1000 = 1s)
 CLOCK_SPEED = 7000
 
 
@@ -509,4 +510,4 @@ def update_ped_fig(n):
 
 
 if __name__ == "__main__":
-    app.run_server(debug=True)
+    app.run_server(debug=False)

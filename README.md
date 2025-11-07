@@ -11,3 +11,21 @@ python app.py
 in the terminal and the dashboard should load automatically, and the web location should be printed in the terminal, 
 this can then be opened in a browser of preference
 
+# Required packages:
+pandas
+numpy
+pyarrow
+geopandas
+shapely
+contextily
+osmnx
+folium
+branca
+matplotlib
+seaborn
+plotly
+dash
+dash-bootstrap-components
+
+# In easy pip install format:
+pip install pandas numpy pyarrow geopandas shapely contextily osmnx folium branca matplotlib seaborn plotly dash dash-bootstrap-components
